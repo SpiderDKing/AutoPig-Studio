@@ -1,0 +1,11 @@
+# 运行时与环境
+python_runtime/
+venv/
+__pycache__/
+*.pyc
+
+# 本地数据与产物
+config.json
+output_pigs/
+*.zip
+.DS_Store
