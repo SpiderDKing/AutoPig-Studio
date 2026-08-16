@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoPig Studio - 量产小猪工坊</title>
+  <title>AutoPig Studio v1.1.0 - 量产小猪工坊</title>
   <link rel="icon" href="/api/hero-image">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -85,7 +85,7 @@
         </div>
         <div>
           <h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-tight">AutoPig Studio</h1>
-          <p class="text-[11px] text-brand-600 font-bold tracking-wider uppercase mt-0.5">小猪自动化工坊</p>
+          <p class="text-[11px] text-brand-600 font-bold tracking-wider uppercase mt-0.5">小猪自动化工坊 v1.1.0</p>
         </div>
       </div>
 
@@ -103,22 +103,37 @@
           </div>
           <span :class="currentTab === 'gallery' ? 'bg-white/25 text-white' : 'bg-brand-100 text-brand-700'" class="text-[11px] font-bold px-2 py-0.5 rounded-full">{{ gallery.length }}</span>
         </button>
+        <button @click="switchTab('faq')" 
+                :class="currentTab === 'faq' ? 'bg-gradient-to-r from-brand to-brand-600 text-white font-semibold shadow-md shadow-brand/25' : 'text-slate-600 hover:bg-brand-50'" 
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition duration-200 text-sm">
+          <span>❓</span> 常见问题 (FAQ)
+        </button>
         <button @click="switchTab('guide')" 
                 :class="currentTab === 'guide' ? 'bg-gradient-to-r from-brand to-brand-600 text-white font-semibold shadow-md shadow-brand/25' : 'text-slate-600 hover:bg-brand-50'" 
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition duration-200 text-sm">
-          <span>📖</span> 使用说明
+          <span>📖</span> 使用说明 (附视频)
         </button>
         <button @click="switchTab('settings')" 
                 :class="currentTab === 'settings' ? 'bg-gradient-to-r from-brand to-brand-600 text-white font-semibold shadow-md shadow-brand/25' : 'text-slate-600 hover:bg-brand-50'" 
                 class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition duration-200 text-sm">
           <span>⚙️</span> API与高级设置
         </button>
+        <button @click="switchTab('feedback')" 
+                :class="currentTab === 'feedback' ? 'bg-gradient-to-r from-brand to-brand-600 text-white font-semibold shadow-md shadow-brand/25' : 'text-slate-600 hover:bg-brand-50'" 
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition duration-200 text-sm">
+          <span>📬</span> 开发者反馈与交流
+        </button>
       </nav>
     </div>
 
+    <!-- 侧边栏底部：无边框原生动效小猪 + 日志 + 状态 -->
     <div class="p-4 border-t border-brand-50/80 space-y-2">
+      <div class="w-full flex items-center justify-center py-1 select-none pointer-events-none">
+        <img :src="gifUrl" alt="Pig Mascot" class="h-16 w-auto object-contain">
+      </div>
+
       <button @click="playOink(); showHistoryModal = true" 
-              class="w-full px-3 py-2 bg-brand-50 hover:bg-brand-100/80 text-brand-700 text-xs font-bold rounded-xl border border-brand-200/50 transition flex items-center justify-between">
+              class="w-full px-3 py-2 bg-white hover:bg-brand-100/80 text-brand-700 text-xs font-bold rounded-xl border border-brand-200/50 transition flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-2">
           <span>📜</span>
           <span>操作历史日志</span>
@@ -129,7 +144,7 @@
       <div class="glass-card px-3.5 py-2.5 rounded-2xl flex items-center gap-2.5 text-xs text-slate-600">
         <span class="relative flex h-2.5 w-2.5">
           <span v-if="networkStatus.ok" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span :class="networkStatus.ok ? 'bg-emerald-500' : 'bg-amber-400'" class="relative inline-flex rounded-full h-2.5 w-2.5"></span>
+          <span :class="networkStatus.ok ? 'bg-emerald-500' : 'bg-rose-500'" class="relative inline-flex rounded-full h-2.5 w-2.5"></span>
         </span>
         <span class="truncate font-medium">{{ networkStatus.text }}</span>
       </div>
@@ -142,11 +157,34 @@
 
       <transition name="page-fade" mode="out-in">
         
-        <!-- 页面 1：量产小猪 -->
+        <!-- 页面 1：量产小猪 (双模式) -->
         <section v-if="currentTab === 'generate'" key="generate" class="space-y-6 relative">
           
-          <!-- 顶部操作栏 -->
-          <div class="glass-panel p-6 rounded-3xl space-y-4 relative z-50">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2 bg-brand-100/60 p-1.5 rounded-2xl w-fit border border-brand-200/50">
+              <button @click="genMode = 'prompt'; playOink()" 
+                      :class="genMode === 'prompt' ? 'bg-white text-brand-700 font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-bold'" 
+                      class="px-4 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                <span>✨</span>
+                <span>智能风格文字量产</span>
+              </button>
+              <button @click="genMode = 'character'; playOink()" 
+                      :class="genMode === 'character' ? 'bg-white text-brand-700 font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-bold'" 
+                      class="px-4 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                <span>🎭</span>
+                <span>角色参考图转小猪 (换装同人)</span>
+              </button>
+            </div>
+
+            <!-- 量产小猪提示 -->
+            <div class="flex items-center gap-2 px-3.5 py-2 bg-amber-50/80 border border-amber-200/70 rounded-2xl text-[11px] text-amber-800 shadow-sm">
+              <span class="text-sm shrink-0">💡</span>
+              <span>受限于个人开发水平与模型随机性，部分批次出图可能不尽人意，可通过<b>微调</b>重绘优化。</span>
+            </div>
+          </div>
+
+          <!-- 子模式 A：文字量产 -->
+          <div v-if="genMode === 'prompt'" class="glass-panel p-6 rounded-3xl space-y-4 relative z-50">
             <div class="flex flex-wrap items-center justify-between gap-4">
               <div class="flex flex-wrap items-center gap-5 flex-1 min-w-[300px]">
                 <div>
@@ -159,7 +197,7 @@
                 </div>
 
                 <div class="flex-1 min-w-[260px] relative">
-                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">风格偏好 (支持自定义输入或点选右侧列表)</label>
+                  <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">风格偏好 (支持自定义输入或点选预设)</label>
                   <div class="relative flex items-center">
                     <input type="text" v-model="genStyle" placeholder="输入自定义风格或点选预设..." 
                            class="w-full px-4 py-2 pr-10 bg-white border border-brand-200 rounded-xl text-sm font-medium text-slate-800 focus:ring-2 focus:ring-brand focus:outline-none shadow-sm">
@@ -173,7 +211,6 @@
                     </button>
                   </div>
 
-                  <!-- 下拉选择菜单：100% 实体纯白背景 -->
                   <div v-if="showStyleMenu" 
                        style="background-color: #ffffff !important; opacity: 1 !important;"
                        class="absolute left-0 top-full mt-2 w-full bg-white rounded-2xl shadow-2xl border border-brand-200 py-2 z-[999] max-h-64 overflow-y-auto">
@@ -187,7 +224,6 @@
                 </div>
               </div>
 
-              <!-- 右侧按钮与即时反馈提示栏 -->
               <div class="flex items-center gap-3">
                 <button @click="startBatchGeneration" :disabled="isPlanning || isRendering" 
                         class="px-7 py-3 bg-gradient-to-r from-brand via-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold text-sm rounded-2xl shadow-lg shadow-brand/30 hover:shadow-brand/40 hover:scale-[1.02] active:scale-[0.98] transition duration-200 disabled:opacity-50 disabled:hover:scale-100 flex items-center gap-2.5">
@@ -207,7 +243,47 @@
             </div>
           </div>
 
-          <!-- 任务绘制卡片列表 -->
+          <!-- 子模式 B：角色立绘转小猪 -->
+          <div v-else-if="genMode === 'character'" class="glass-panel p-6 rounded-3xl space-y-5 relative z-50">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+              
+              <div class="md:col-span-1 border-2 border-dashed border-brand-200 hover:border-brand rounded-2xl p-4 text-center relative bg-brand-50/30 flex flex-col items-center justify-center min-h-[140px] transition cursor-pointer">
+                <input type="file" accept="image/*" @change="handleCharacterUpload" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                <template v-if="characterImgB64">
+                  <img :src="characterImgB64" class="h-24 w-auto object-contain rounded-xl shadow-sm">
+                  <p class="text-[11px] text-brand-700 font-bold mt-2">点击更换角色参考图</p>
+                </template>
+                <template v-else>
+                  <div class="text-3xl mb-1.5">🖼️</div>
+                  <p class="text-xs font-bold text-slate-700">点击上传角色立绘 / 截图</p>
+                  <p class="text-[10px] text-slate-400 mt-0.5">支持 PNG、JPG（自动轻量压缩）</p>
+                </template>
+              </div>
+
+              <div class="md:col-span-2 space-y-3.5">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">角色名称 / 核心特征提示词 (推荐输入角色名及标志发型配饰)</label>
+                  <input type="text" v-model="characterName" placeholder="例如：doro，带有灰色头发与女仆发饰；或：芙宁娜，戴礼帽" 
+                         class="w-full px-4 py-2 bg-white border border-brand-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand focus:outline-none shadow-sm">
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                  <p class="text-[11px] text-slate-400 leading-relaxed">
+                    💡 提示：输入具体饰品与色彩（如“猫耳发饰、蓝白风衣”）比输入“替换头部”生成效果更好。
+                  </p>
+                  <button @click="startCharacterPigGeneration" :disabled="isCharRendering || !characterImgB64" 
+                          class="px-6 py-2.5 bg-gradient-to-r from-brand to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold text-xs rounded-xl shadow-md shadow-brand/25 transition disabled:opacity-50 flex items-center gap-2 shrink-0">
+                    <span v-if="isCharRendering" class="animate-spin">⏳</span>
+                    <span v-else>🎨</span>
+                    <span>{{ isCharRendering ? '正在转换小猪...' : '生成角色小猪' }}</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 任务列表卡片 -->
           <div v-if="tasks.length > 0" class="relative z-10">
             <transition-group name="card-list" tag="div" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div v-for="(task, idx) in tasks" :key="task.slug + '_' + idx" 
@@ -235,11 +311,17 @@
                     <div class="animate-bounce text-3xl">🎨</div>
                     <p class="text-xs text-brand font-bold">云端正在绘制，请稍候...</p>
                   </div>
+                  
                   <div v-else-if="task.status === 'error'" class="text-center space-y-2 p-4">
-                    <div class="text-2xl">⚠️</div>
+                    <div class="text-3xl">⚠️</div>
                     <p class="text-xs text-rose-500 font-bold">渲染未成功</p>
-                    <button @click="retryTask(task)" class="px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-lg hover:bg-brand-200 transition">点击重试</button>
+                    <p class="text-[11px] text-slate-400 font-medium">请在操作历史日志查看报错日志</p>
+                    <div class="pt-2 flex items-center justify-center gap-2">
+                      <button @click="retryTask(task)" class="px-3.5 py-1.5 bg-brand-100 hover:bg-brand-200 text-brand-700 text-xs font-bold rounded-xl transition">点击重试</button>
+                      <button @click="dismissTask(idx, task.theme)" class="px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold rounded-xl transition">✕ 取消卡片</button>
+                    </div>
                   </div>
+
                   <div v-else class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-slate-300 animate-pulse"></span>
                     排队等待中...
@@ -264,7 +346,7 @@
                     </div>
 
                     <div v-if="task.showRetry" class="pt-2 flex gap-1.5">
-                      <input type="text" v-model="task.extraFeedback" placeholder="修改意见 (如: 帽子缩小)" 
+                      <input type="text" v-model="task.extraFeedback" placeholder="修改意见 (如: 调整头部比例)" 
                              class="flex-1 px-3 py-1.5 text-xs bg-white border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand">
                       <button @click="retryTask(task)" 
                               class="px-3.5 py-1.5 bg-brand hover:bg-brand-600 text-white text-xs font-bold rounded-xl shadow-sm transition">
@@ -273,7 +355,7 @@
                     </div>
                   </template>
                   <div v-else class="text-center text-xs text-slate-400 py-1.5 font-medium">
-                    状态：{{ task.status === 'rendering' ? '绘制中' : '等待队列' }}
+                    状态：{{ task.status === 'rendering' ? '绘制中' : task.status === 'error' ? '渲染异常' : '等待队列' }}
                   </div>
                 </div>
 
@@ -281,12 +363,11 @@
             </transition-group>
           </div>
 
-          <!-- 嵌入背景的欢迎语 -->
-          <div v-else-if="!isPlanning && !isRendering" class="py-20 text-center space-y-3 pointer-events-none select-none">
+          <div v-else-if="!isPlanning && !isRendering && !isCharRendering" class="py-20 text-center space-y-3 pointer-events-none select-none">
             <div class="text-5xl animate-pulse">🐷</div>
             <h3 class="text-2xl font-extrabold text-slate-800/90 tracking-tight">开始量产你的第一批专属小猪</h3>
             <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-              在上方设定风格偏好并选择数量，点击“开始量产小猪”，AI 将自动策划并严格基于基准参考图生成统一比例的高清小猪造型。
+              选择风格文字量产或上传角色立绘，AI 将自动策划并基于基准参考图生成统一比例的高清小猪造型。
             </p>
           </div>
         </section>
@@ -305,7 +386,7 @@
 
           <div v-if="gallery.length === 0" class="py-20 text-center text-slate-400 font-medium space-y-2">
             <div class="text-3xl opacity-60">📂</div>
-            <p class="text-xs">本地文件夹内暂无已保存小猪，前往“量产小猪”页面开始创作吧！</p>
+            <p class="text-xs">本地暂无保存图片，前往“量产小猪”页面开始创作吧！</p>
           </div>
 
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
@@ -331,34 +412,117 @@
           </div>
         </section>
 
-        <!-- 页面 3：使用说明 -->
+        <!-- 页面 3：常见问题 FAQ -->
+        <section v-else-if="currentTab === 'faq'" key="faq" class="max-w-4xl mx-auto space-y-6">
+          <div class="glass-panel p-8 rounded-3xl space-y-6">
+            <div class="border-b border-brand-100 pb-5 flex items-center gap-5">
+              <div class="w-16 h-16 rounded-2xl bg-brand-100/80 p-1 flex items-center justify-center shadow-inner ring-2 ring-brand-200/60 shrink-0">
+                <img src="/api/scholar-image" alt="Pig Scholar" class="w-full h-full object-contain rounded-xl" @error="handleScholarImgError">
+              </div>
+              <div class="flex-1">
+                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span>❓</span> 常见问题与排查指南 (FAQ)
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">快速排查网络故障、API 节点支持与模型匹配疑惑</p>
+              </div>
+              <span class="text-xs font-mono font-bold bg-brand-50 text-brand-700 px-3 py-1 rounded-full border border-brand-200/60 shrink-0">
+                共 {{ faqList.length }} 个条目
+              </span>
+            </div>
+
+            <div class="space-y-3">
+              <div v-for="(item, idx) in faqList" :key="idx" 
+                   :class="item.type === 'tip' ? 'border-amber-200/80 bg-gradient-to-r from-amber-50/40 via-white to-amber-50/20' : 'border-brand-100/70 bg-white/70'"
+                   class="glass-card rounded-2xl border overflow-hidden transition-all duration-200">
+                <button @click="toggleFaq(idx)" 
+                        class="w-full p-4 text-left flex items-center justify-between hover:bg-brand-50/40 transition">
+                  <span class="font-bold text-slate-800 text-sm flex items-center gap-2.5">
+                    <span :class="item.type === 'tip' ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-brand-100 text-brand-700 border-brand-200'" 
+                          class="px-2 py-0.5 text-xs font-extrabold rounded-lg border">
+                      {{ item.tag }}
+                    </span>
+                    <span>{{ item.title }}</span>
+                  </span>
+                  <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" 
+                       :class="openFaqs.includes(idx) ? 'rotate-180 text-brand' : ''" 
+                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                <div v-if="openFaqs.includes(idx)" 
+                     class="p-4 pt-1 border-t border-brand-50 bg-white/60 text-xs text-slate-600 leading-relaxed space-y-2">
+                  <div v-html="item.content"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 页面 4：使用说明 -->
         <section v-else-if="currentTab === 'guide'" key="guide" class="max-w-4xl mx-auto space-y-6">
           <div class="glass-panel p-8 rounded-3xl space-y-6">
             <div class="border-b border-brand-100 pb-4">
               <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                <span>📖</span> AutoPig Studio 快速上手指南
+                <span>📖</span> 使用说明 (附B站视频演示教程)
               </h2>
-              <p class="text-xs text-slate-400 mt-1">了解小猪量产、参数配置与高效工作流</p>
+              <p class="text-xs text-slate-400 mt-1">了解小猪量产、角色同人转换与视频教程指引</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+            <div class="space-y-4">
+              <div v-if="videoData.current_version" class="glass-card p-5 rounded-2xl bg-gradient-to-r from-brand-50/70 via-white to-brand-50/30 border border-brand-200/80 flex flex-wrap items-center justify-between gap-4">
+                <div class="space-y-1 max-w-xl">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 bg-brand text-white text-[10px] font-extrabold rounded-md">
+                      {{ videoData.current_version.tag }}
+                    </span>
+                    <h3 class="font-extrabold text-slate-900 text-sm">{{ videoData.current_version.title }}</h3>
+                  </div>
+                  <p class="text-xs text-slate-500 leading-relaxed">{{ videoData.current_version.desc }}</p>
+                </div>
+                <a :href="videoData.current_version.url" target="_blank" 
+                   class="px-5 py-2.5 bg-brand hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-md shadow-brand/25 transition flex items-center gap-2 shrink-0">
+                  <span>📺</span>
+                  <span>立即观看演示</span>
+                </a>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div v-for="(v, i) in videoData.general_guides" :key="i" 
+                     class="glass-card p-4 rounded-2xl border border-brand-100 flex flex-col justify-between hover:shadow-md transition">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">
+                        {{ v.tag }}
+                      </span>
+                      <h4 class="font-bold text-slate-800 text-xs truncate">{{ v.title }}</h4>
+                    </div>
+                    <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">{{ v.desc }}</p>
+                  </div>
+                  <a :href="v.url" target="_blank" class="mt-3 text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1">
+                    <span>前往B站观看 ➔</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 text-sm">
               <div class="glass-card p-5 rounded-2xl space-y-2">
                 <div class="flex items-center gap-2 font-bold text-brand-700">
                   <span class="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs">1</span>
-                  <span>第一步：填入 API 密钥</span>
+                  <span>第一步：配置 API 密钥</span>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                  前往「API与高级设置」，填入 API Key 和 Base URL。点击“测试连接状态”，系统会自动嗅探并为您匹配推荐的文本策划与绘图模型。
+                  在「API与高级设置」中填入密钥。支持单 API 或分离为独立策划/生图双 API，点击验证可用性。
                 </p>
               </div>
 
               <div class="glass-card p-5 rounded-2xl space-y-2">
                 <div class="flex items-center gap-2 font-bold text-brand-700">
                   <span class="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center text-xs">2</span>
-                  <span>第二步：选定风格与数量</span>
+                  <span>第二步：选择生成模式</span>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                  在「量产小猪」界面选择生成数量（1~10只）。点击风格输入框右侧的小三角可快速展开主题预设，也可以自由打字。
+                  选择「智能风格文字量产」批量创作，或切换为「角色参考图转小猪」上传立绘同人化。
                 </p>
               </div>
 
@@ -368,7 +532,7 @@
                   <span>第三步：实时审核与微调</span>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                  图片绘制完成后可直接预览。满意点击「保存到本地」即可自动存盘；不满意可点击「微调」输入修改指示重绘。
+                  预览生成效果。满意点击「保存到本地」；不满意可点击「微调」指示重绘。
                 </p>
               </div>
 
@@ -378,147 +542,326 @@
                   <span>第四步：本地图库管理</span>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                  在「本地图库」中可实时浏览已保存的所有小猪资产，支持随时刷新及一键删除无用图片。
+                  在「本地图库」中可实时浏览已保存的所有小猪资产，支持刷新及一键删除。
                 </p>
               </div>
-            </div>
-
-            <div class="p-4 bg-brand-50/70 border border-brand-200/60 rounded-2xl text-xs text-brand-800 space-y-1">
-              <p class="font-bold">💡 提示技巧：</p>
-              <p>• 系统具有自动防冲突机制，每次生成任务会自动避开本地文件夹中已有的小猪主题。</p>
-              <p>• 若想更换所有小猪的原型，在「API与高级设置」展开高级选项上传新的基准参考图即可。</p>
             </div>
           </div>
         </section>
 
-        <!-- 页面 4：API与高级设置 -->
+        <!-- 页面 5：API与高级设置 -->
         <section v-else-if="currentTab === 'settings'" key="settings" class="max-w-2xl mx-auto space-y-6">
-          <div class="glass-panel p-8 rounded-3xl space-y-6">
-            <div>
-              <h2 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                <span>🔑</span> API 设置
-              </h2>
-              <p class="text-xs text-slate-400 mt-1">配置云端推理服务凭据与基础接口</p>
+          
+          <div class="glass-panel p-8 rounded-3xl space-y-5">
+            <div class="border-b border-brand-100 pb-3 flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span>🔑</span> 第一步：API 服务商模式选择与凭据配置
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">可选择共用单一中转 API，或分别配置策划模型与生图模型的独立接口</p>
+              </div>
+              
+              <div class="flex items-center gap-2 bg-brand-50 p-1 rounded-xl border border-brand-100 shrink-0">
+                <button @click="config.dual_api = false" :class="!config.dual_api ? 'bg-white text-brand font-bold shadow-sm' : 'text-slate-500'" class="px-2.5 py-1 text-xs rounded-lg transition">单 API 模式</button>
+                <button @click="config.dual_api = true" :class="config.dual_api ? 'bg-white text-brand font-bold shadow-sm' : 'text-slate-500'" class="px-2.5 py-1 text-xs rounded-lg transition">双 API 分离</button>
+              </div>
             </div>
             
-            <div class="space-y-4">
+            <!-- 单 API 模式表单 -->
+            <div v-if="!config.dual_api" class="space-y-4">
               <div>
-                <label class="block font-bold text-slate-700 mb-1.5 text-xs">API Key</label>
+                <label class="block font-bold text-slate-700 mb-1.5 text-xs">API Key (通用密钥)</label>
                 <input type="password" v-model="config.api_key" placeholder="sk-..." 
                        class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
               </div>
 
               <div>
-                <label class="block font-bold text-slate-700 mb-1.5 text-xs">Base URL (接口地址)</label>
+                <label class="block font-bold text-slate-700 mb-1.5 text-xs">Base URL (通用接口地址)</label>
                 <input type="text" v-model="config.base_url" placeholder="https://api.apifast.tech/v1" 
                        class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
               </div>
 
-              <!-- 测试连接状态 -->
-              <div class="pt-2 flex flex-col gap-3">
+              <div class="pt-1 flex flex-col gap-3">
                 <div class="flex items-center gap-3">
-                  <button @click="testConnection" :disabled="isTestingNet" 
+                  <button @click="testConnectivity" :disabled="isTestingNet" 
                           class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-2">
                     <span v-if="isTestingNet" class="animate-spin">🔄</span>
-                    <span>测试连接并智能探测模型</span>
+                    <span>{{ isTestingNet ? '正在测试接口连通性...' : '测试接口连通性 (Ping)' }}</span>
                   </button>
-                  <span v-if="testResult" :class="testResult.status === 'success' ? 'text-emerald-600 font-bold' : 'text-rose-500 font-bold'" class="text-xs">
-                    {{ testResult.msg }}
+                  <span v-if="connResult && connResult.status === 'success'" class="text-emerald-600 font-bold text-xs">
+                    {{ connResult.msg }}
                   </span>
                 </div>
 
-                <div v-if="testResult && testResult.status === 'error'" class="mt-2 p-4 bg-slate-900 text-slate-100 rounded-2xl space-y-2 font-mono text-xs">
+                <div v-if="connResult && connResult.status === 'error'" class="p-4 bg-slate-900 text-slate-100 rounded-2xl space-y-2 font-mono text-xs">
                   <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span class="text-rose-400 font-bold">⚠️ 错误诊断日志</span>
-                    <button @click="copyErrorLog" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-brand-300 text-[11px] rounded-lg transition font-sans">
+                    <span class="text-rose-400 font-bold">⚠️ 连通性错误诊断</span>
+                    <button @click="copyErrorLog(connResult.log)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-brand-300 text-[11px] rounded-lg transition font-sans">
                       {{ logCopied ? '✓ 已复制日志' : '📋 复制日志给 AI' }}
                     </button>
                   </div>
-                  <pre class="overflow-x-auto text-[11px] leading-relaxed max-h-56 select-all">{{ testResult.log }}</pre>
+                  <pre class="overflow-x-auto text-[11px] leading-relaxed max-h-56 select-all">{{ connResult.log }}</pre>
                 </div>
               </div>
             </div>
 
-            <!-- 高级设置展开按钮 -->
-            <div class="border-t border-brand-100/80 pt-4">
-              <button @click="showAdvanced = !showAdvanced" 
-                      type="button"
-                      class="flex items-center justify-between w-full py-2 text-xs font-extrabold text-slate-600 hover:text-brand-600 transition">
-                <div class="flex items-center gap-2">
-                  <span>🛠️</span>
-                  <span>高级设置 (自定义模型、网络代理、导出路径与基准图)</span>
-                </div>
-                <svg class="w-4 h-4 transition-transform duration-200" :class="showAdvanced ? 'rotate-180 text-brand' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-
-              <!-- 折叠内容 -->
-              <div v-if="showAdvanced" class="mt-4 p-5 bg-brand-50/40 rounded-2xl border border-brand-100 space-y-4">
-                
-                <!-- 智能模型选择器 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label class="block font-bold text-slate-700 mb-1.5 text-xs">
-                      🧠 策划/文本模型 (支持手动输入或下拉点选)
-                    </label>
-                    <div class="relative flex items-center">
-                      <input type="text" v-model="config.text_model" placeholder="如 gemini-2.5-flash 或 gpt-4o-mini" list="scanned-text-models"
-                             class="w-full px-4 py-2.5 bg-white border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
-                      <datalist id="scanned-text-models">
-                        <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
-                      </datalist>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label class="block font-bold text-slate-700 mb-1.5 text-xs">
-                      🎨 图像生成模型 (支持手动输入或下拉点选)
-                    </label>
-                    <div class="relative flex items-center">
-                      <input type="text" v-model="config.image_model" placeholder="如 gemini-3.1-flash-image-preview 或 dall-e-3" list="scanned-image-models"
-                             class="w-full px-4 py-2.5 bg-white border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
-                      <datalist id="scanned-image-models">
-                        <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
-                      </datalist>
-                    </div>
-                  </div>
+            <!-- 双 API 分离模式表单（附带各自独立测试连通性按钮） -->
+            <div v-else class="space-y-4">
+              <!-- 1. 策划模型专用接口 -->
+              <div class="p-4 bg-brand-50/40 rounded-2xl border border-brand-100 space-y-3">
+                <h4 class="font-bold text-xs text-brand-800 flex items-center gap-1.5">
+                  <span>🧠</span> 策划模型专用接口 (如 DeepSeek / OpenAI)
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input type="password" v-model="config.text_api_key" placeholder="策划 API Key (sk-...)" class="w-full px-3 py-2 bg-white border border-brand-200 rounded-xl text-xs font-mono">
+                  <input type="text" v-model="config.text_base_url" placeholder="策划 Base URL (如 https://api.deepseek.com/v1)" class="w-full px-3 py-2 bg-white border border-brand-200 rounded-xl text-xs font-mono">
                 </div>
 
-                <div>
-                  <div class="flex items-center justify-between mb-1.5">
-                    <label class="font-bold text-slate-700 text-xs">本地网络代理</label>
-                    <span class="text-[10px] text-slate-400 font-mono bg-white/80 px-2 py-0.5 rounded-md border border-brand-100">
-                      当前探测: {{ config.detected_proxy || '自动嗅探中' }}
+                <div class="flex flex-col gap-2 pt-1">
+                  <div class="flex items-center gap-3">
+                    <button @click="testSpecificConnectivity('text')" :disabled="isTestingTextNet" 
+                            class="px-4 py-2 bg-brand hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
+                      <span v-if="isTestingTextNet" class="animate-spin">🔄</span>
+                      <span>{{ isTestingTextNet ? '正在测试策划接口...' : '测试策划接口连通性 (Ping)' }}</span>
+                    </button>
+                    <span v-if="textConnResult && textConnResult.status === 'success'" class="text-emerald-600 font-bold text-xs">
+                      {{ textConnResult.msg }}
                     </span>
                   </div>
-                  <input type="text" v-model="config.proxy" placeholder="默认 auto (自动嗅探 7897/7890 端口，留空即可)" 
-                         class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
-                  <p class="text-[11px] text-slate-400 mt-1">系统已内置智能端口嗅探，大多数情况下保持默认 `auto` 或留空即可。</p>
+
+                  <div v-if="textConnResult && textConnResult.status === 'error'" class="p-3 bg-slate-900 text-slate-100 rounded-xl space-y-1.5 font-mono text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                      <span class="text-rose-400 font-bold">⚠️ 策划接口连通异常</span>
+                      <button @click="copyErrorLog(textConnResult.log)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-brand-300 text-[10px] rounded-lg transition font-sans">
+                        {{ logCopied ? '✓ 已复制' : '📋 复制日志' }}
+                      </button>
+                    </div>
+                    <pre class="overflow-x-auto text-[10px] leading-relaxed max-h-36 select-all">{{ textConnResult.log }}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. 生图模型专用接口 -->
+              <div class="p-4 bg-amber-50/40 rounded-2xl border border-amber-100 space-y-3">
+                <h4 class="font-bold text-xs text-amber-800 flex items-center gap-1.5">
+                  <span>🎨</span> 生图模型专用接口 (需支持 Gemini/DALL-E)
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input type="password" v-model="config.image_api_key" placeholder="生图 API Key (sk-...)" class="w-full px-3 py-2 bg-white border border-amber-200 rounded-xl text-xs font-mono">
+                  <input type="text" v-model="config.image_base_url" placeholder="生图 Base URL" class="w-full px-3 py-2 bg-white border border-amber-200 rounded-xl text-xs font-mono">
                 </div>
 
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1.5 text-xs">图片导出目录</label>
-                  <input type="text" v-model="config.output_dir" placeholder="./output_pigs" 
-                         class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
-                </div>
-
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1.5 text-xs">基准参考图 (小猪原图)</label>
+                <div class="flex flex-col gap-2 pt-1">
                   <div class="flex items-center gap-3">
-                    <input type="file" @change="uploadBaseImage" 
-                           class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
-                    <span class="text-xs text-slate-400 font-medium">当前文件: {{ config.base_img_path }}</span>
+                    <button @click="testSpecificConnectivity('image')" :disabled="isTestingImageNet" 
+                            class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
+                      <span v-if="isTestingImageNet" class="animate-spin">🔄</span>
+                      <span>{{ isTestingImageNet ? '正在测试生图接口...' : '测试生图接口连通性 (Ping)' }}</span>
+                    </button>
+                    <span v-if="imageConnResult && imageConnResult.status === 'success'" class="text-emerald-600 font-bold text-xs">
+                      {{ imageConnResult.msg }}
+                    </span>
+                  </div>
+
+                  <div v-if="imageConnResult && imageConnResult.status === 'error'" class="p-3 bg-slate-900 text-slate-100 rounded-xl space-y-1.5 font-mono text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                      <span class="text-rose-400 font-bold">⚠️ 生图接口连通异常</span>
+                      <button @click="copyErrorLog(imageConnResult.log)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-brand-300 text-[10px] rounded-lg transition font-sans">
+                        {{ logCopied ? '✓ 已复制' : '📋 复制日志' }}
+                      </button>
+                    </div>
+                    <pre class="overflow-x-auto text-[10px] leading-relaxed max-h-36 select-all">{{ imageConnResult.log }}</pre>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="pt-2 flex justify-end">
+          </div>
+
+          <div class="glass-panel p-8 rounded-3xl space-y-5">
+            <div class="border-b border-brand-100 pb-3">
+              <h2 class="text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <span>🤖</span> 第二步：核心模型配置与可用性验证
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">选择用于主题构思与画图的模型，并验证执行权限</p>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5 text-xs">
+                    🧠 策划/文本模型 (支持点选或输入)
+                  </label>
+                  <div class="relative flex items-center">
+                    <input type="text" v-model="config.text_model" placeholder="如 gemini-2.5-flash" list="scanned-text-models"
+                           class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
+                    <datalist id="scanned-text-models">
+                      <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
+                    </datalist>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5 text-xs">
+                    🎨 图像生成模型 (支持点选或输入)
+                  </label>
+                  <div class="relative flex items-center">
+                    <input type="text" v-model="config.image_model" placeholder="如 gemini-3.1-flash-image-preview" list="scanned-image-models"
+                           class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
+                    <datalist id="scanned-image-models">
+                      <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
+                    </datalist>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-1 flex flex-col gap-3">
+                <div class="flex items-center gap-3">
+                  <button @click="testModelsUsability" :disabled="isTestingModels" 
+                          class="px-5 py-2.5 bg-brand hover:bg-brand-600 text-white font-bold text-xs rounded-xl transition shadow-sm shadow-brand/20 flex items-center gap-2">
+                    <span v-if="isTestingModels" class="animate-spin">🔄</span>
+                    <span>{{ isTestingModels ? '正在验证模型调用权限...' : '验证选定模型可用性' }}</span>
+                  </button>
+                </div>
+
+                <div v-if="modelTestResult && modelTestResult.status === 'success'" 
+                     class="p-4 bg-brand-50/60 border border-brand-200 rounded-2xl space-y-2 text-xs">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="p-3 bg-white rounded-xl border border-brand-100 space-y-1">
+                      <div class="flex items-center justify-between font-bold" :class="modelTestResult.text_model_ok ? 'text-emerald-700' : 'text-rose-600'">
+                        <span>🧠 策划模型</span>
+                        <span>{{ modelTestResult.text_model_ok ? '✓ 可用' : '✕ 不可用' }}</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 font-mono truncate">{{ modelTestResult.text_model }}</p>
+                      <p class="text-[11px] font-medium" :class="modelTestResult.text_model_ok ? 'text-emerald-600' : 'text-rose-500'">{{ modelTestResult.text_model_msg }}</p>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-xl border border-brand-100 space-y-1">
+                      <div class="flex items-center justify-between font-bold" :class="modelTestResult.image_model_ok ? 'text-emerald-700' : 'text-amber-600'">
+                        <span>🎨 生图模型</span>
+                        <span>{{ modelTestResult.image_model_ok ? '✓ 就绪' : '⚠️ 需核验' }}</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500 font-mono truncate">{{ modelTestResult.image_model }}</p>
+                      <p class="text-[11px] font-medium" :class="modelTestResult.image_model_ok ? 'text-emerald-600' : 'text-amber-600'">{{ modelTestResult.image_model_msg }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="modelTestResult && modelTestResult.status === 'error'" class="p-4 bg-slate-900 text-slate-100 rounded-2xl space-y-2 font-mono text-xs">
+                  <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span class="text-rose-400 font-bold">⚠️ 模型验证异常</span>
+                    <button @click="copyErrorLog(modelTestResult.log)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-brand-300 text-[11px] rounded-lg transition font-sans">
+                      {{ logCopied ? '✓ 已复制日志' : '📋 复制日志给 AI' }}
+                    </button>
+                  </div>
+                  <pre class="overflow-x-auto text-[11px] leading-relaxed max-h-56 select-all">{{ modelTestResult.log }}</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-3xl space-y-4">
+            <button @click="showAdvanced = !showAdvanced" 
+                    type="button"
+                    class="flex items-center justify-between w-full text-xs font-extrabold text-slate-600 hover:text-brand-600 transition">
+              <div class="flex items-center gap-2">
+                <span>🛠️</span>
+                <span>高级参数设置 (网络代理、导出目录与基准参考图)</span>
+              </div>
+              <svg class="w-4 h-4 transition-transform duration-200" :class="showAdvanced ? 'rotate-180 text-brand' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+
+            <div v-if="showAdvanced" class="pt-2 border-t border-brand-100 space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="font-bold text-slate-700 text-xs">本地网络代理</label>
+                  <span class="text-[10px] text-slate-400 font-mono bg-white/80 px-2 py-0.5 rounded-md border border-brand-100">
+                    当前探测: {{ config.detected_proxy || '自动嗅探中' }}
+                  </span>
+                </div>
+                <input type="text" v-model="config.proxy" placeholder="默认 auto (自动嗅探 7897/7890 端口，留空即可)" 
+                       class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5 text-xs">图片导出目录</label>
+                <input type="text" v-model="config.output_dir" placeholder="./output_pigs" 
+                       class="w-full px-4 py-2.5 bg-white/90 border border-brand-200 rounded-xl focus:ring-2 focus:ring-brand focus:outline-none font-mono text-xs shadow-sm">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5 text-xs">基准参考图 (小猪原图)</label>
+                <div class="flex items-center gap-3">
+                  <input type="file" @change="uploadBaseImage" 
+                         class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
+                  <span class="text-xs text-slate-400 font-medium">当前文件: {{ config.base_img_path }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-end border-t border-brand-50">
               <button @click="saveSettings" 
                       class="px-7 py-2.5 bg-gradient-to-r from-brand to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold text-xs rounded-xl shadow-md shadow-brand/25 transition duration-150">
                 保存所有配置
               </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 页面 6：开发者反馈与交流 -->
+        <section v-else-if="currentTab === 'feedback'" key="feedback" class="max-w-3xl mx-auto space-y-6">
+          <div class="glass-panel p-8 rounded-3xl space-y-6">
+            <div class="border-b border-brand-100 pb-5">
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <span>📬</span> 开发者反馈与交流
+              </h2>
+              <p class="text-xs text-slate-400 mt-1">欢迎提交功能脑洞、Bug 反馈与二创交流</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <a href="https://space.bilibili.com/438755197" target="_blank" 
+                 class="glass-card p-5 rounded-2xl flex flex-col justify-between hover:shadow-lg hover:border-brand-300 transition group">
+                <div class="space-y-2">
+                  <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                    📺
+                  </div>
+                  <h3 class="font-bold text-slate-800 text-sm">Bilibili 个人空间</h3>
+                  <p class="text-[11px] text-slate-500 font-semibold">UP主: @Gusare124</p>
+                </div>
+                <span class="mt-4 text-xs font-bold text-brand-600 flex items-center gap-1">前往主页 ➔</span>
+              </a>
+
+              <a href="https://github.com/Gusare124" target="_blank" 
+                 class="glass-card p-5 rounded-2xl flex flex-col justify-between hover:shadow-lg hover:border-brand-300 transition group">
+                <div class="space-y-2">
+                  <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                    🐙
+                  </div>
+                  <h3 class="font-bold text-slate-800 text-sm">GitHub 开源主页</h3>
+                  <p class="text-[11px] text-slate-400">@Gusare124</p>
+                </div>
+                <span class="mt-4 text-xs font-bold text-brand-600 flex items-center gap-1">访问仓库 ➔</span>
+              </a>
+
+              <a href="mailto:gusare2077@163.com" 
+                 class="glass-card p-5 rounded-2xl flex flex-col justify-between hover:shadow-lg hover:border-brand-300 transition group">
+                <div class="space-y-2">
+                  <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                    ✉️
+                  </div>
+                  <h3 class="font-bold text-slate-800 text-sm">官方交流邮箱</h3>
+                  <p class="text-[11px] text-slate-400 font-mono">gusare2077@163.com</p>
+                </div>
+                <span class="mt-4 text-xs font-bold text-brand-600 flex items-center gap-1">发送邮件 ➔</span>
+              </a>
+            </div>
+
+            <div class="p-5 bg-brand-50/50 rounded-2xl border border-brand-100 text-xs text-slate-600 space-y-2">
+              <p class="font-bold text-brand-800">💡 交流与支持提示：</p>
+              <p>• 如果在量产小猪过程中遇到未能解决的报错，可点击左侧边栏底部的「操作历史日志」一键复制完整错误堆栈并发送至邮箱或 GitHub Issues。</p>
+              <p>• 本项目持续迭代升级中，欢迎提供更多有趣的风格预设与功能建议！</p>
             </div>
           </div>
         </section>
@@ -574,10 +917,15 @@
     data() {
       return {
         currentTab: 'generate',
+        genMode: 'prompt',
         genCount: 3,
         genStyle: '趣味职业与生活角色',
+        characterImgB64: null,
+        characterName: '',
+        isCharRendering: false,
         showStyleMenu: false,
         showAdvanced: false,
+        gifUrl: '/api/pig-gif?t=' + Date.now(),
         presetStyles: [
           '趣味职业与生活角色',
           '赛博朋克与未来机甲',
@@ -590,13 +938,109 @@
           '美食甜点与糖果王国',
           '暗黑哥特与万圣幽灵'
         ],
+        videoData: {
+          current_version: {
+            title: 'AutoPig Studio v1.1.0 快速上手与功能详解',
+            desc: '本版本核心更新：角色参考图转小猪、双API独立配置与图库管理',
+            url: 'https://space.bilibili.com/438755197',
+            tag: '当前版本主教程'
+          },
+          general_guides: [
+            {
+              title: '【小白必看】如何零门槛获取并配置生图 API 密钥',
+              desc: '详细讲解 API Key、Base URL 获取流程及网络连通排查',
+              url: 'https://space.bilibili.com/438755197',
+              tag: 'API配置'
+            },
+            {
+              title: '【提示词秘籍】如何让小猪完美还原角色外貌特征',
+              desc: '分享提示词调优技巧，避免角色变形与画风失真',
+              url: 'https://space.bilibili.com/438755197',
+              tag: '调优技巧'
+            }
+          ]
+        },
+        openFaqs: [0, 1, 2, 3, 4],
+        faqList: [
+          {
+            type: 'tip',
+            tag: '💡 提示 1',
+            title: '请确认 API 同时具备“文本策划”与“图像生成”权限',
+            content: '<p>请确保填写的 API 接口支持 <span style="color: #991b1b; font-weight: 800;">具备图像生成能力的多模态生图 AI</span>（例如 Gemini 3.1 Flash Image、DALL-E 3 等）。若仅配置纯文本模型（如 DeepSeek 官方接口），第一步策划会成功但画图阶段会报 500 错误。</p>'
+          },
+          {
+            type: 'tip',
+            tag: '💡 提示 2',
+            title: '灵活借助 AI 成为技术助手，轻松排查未知报错',
+            content: '<p>遇到未知报错时，点击左下角的 <b>「操作历史日志」</b> 复制完整错误信息直接发给 AI（如 ChatGPT、Claude、DeepSeek），大多数网络代理、跨域或模型名称问题均可极速自助定位解决。</p>'
+          },
+          {
+            type: 'tip',
+            tag: '💡 提示 3',
+            title: '关于 API 费用与额度消耗的重要提示',
+            content: '<p><span style="color: #991b1b; font-weight: 800;">每次点击生成图片，无论后续是否点击「保存到本地」，云端服务商均已实际执行了绘图推理并产生了相应算力费用。</span>请在批量出图时合理规划生成数量，避免不必要的额度浪费。</p>'
+          },
+          {
+            type: 'tip',
+            tag: '💡 提示 4',
+            title: '生成图片的最终质量主要受哪些因素影响？',
+            content: '<p>生成小猪的效果受多个维度的综合影响：</p>' +
+                     '<p class="mt-1.5"><b>1. 底层 AI 模型的基底能力：</b>不同厂商的模型在多模态特征迁移、空间构图与细节还原上存在能力差异，更强大的模型通常理解度更高。</p>' +
+                     '<p class="mt-1"><b>2. 提示词精准度与参考图质感：</b>在角色模式中，上传主体明确、背景简洁的高清立绘，并在提示词中清晰描述标志性发型、服饰与配色，能显著提升特征还原度。</p>' +
+                     '<p class="mt-1"><b>3. 模型采样的随机性波动：</b>AI 生图具有固有随机性，单次生成偶有瑕疵属于正常现象，多次尝试或善用卡片下方的<b>「微调」</b>重绘通常能获得更理想的效果。</p>' +
+                     '<p class="mt-1"><b>4. 开发者个人的工程水平与算法管线：</b>由于作者个人开发技术与经验有限，提示词策划编排与参数微调管线仍不够完善。如果部分出图未能达到您的预期，在此向您深表歉意！后续会持续优化管线与模型适配。</p>'
+          },
+          {
+            type: 'tip',
+            tag: '💡 提示 5',
+            title: '生成任务结束前请勿随意切换生成模式（防止数据丢失）',
+            content: '<p><span style="color: #991b1b; font-weight: 800;">在批量绘制或角色小猪转换彻底完成之前，请切勿随意在「智能风格文字量产」与「角色参考图转小猪」两种模式之间来回切换。</span></p>' +
+                     '<p class="mt-1">由于当前任务上下文与模式状态绑定，中途切换可能导致正在进行的渲染队列中断、返回数据丢失或生成卡片显示异常。请等待所有小猪绘制完成并保存或取消后再进行切换。</p>'
+          },
+          {
+            type: 'qa',
+            tag: 'Q1',
+            title: '点击测试连接提示 "TypeError: Failed to fetch" 怎么解决？',
+            content: '<p><b>可能原因：</b>浏览器无法与本地 Python 后端服务建立网络连接。<br>1. 请确认启动程序的 <b>CMD 黑色命令行窗口没有被关闭</b>。<br>2. 若开启了科学上网工具的全局 TUN 模式，请确保本地回环地址 <code>127.0.0.1</code> 处于代理白名单直连列表中。<br>3. 重新双击运行 <code>start.bat</code> 启动服务。</p>'
+          },
+          {
+            type: 'qa',
+            tag: 'Q2',
+            title: '为什么提示词策划成功，但生图一直报 500 错误？',
+            content: '<p><b>可能原因：</b>当前填写的 API Key 节点只支持纯文本大模型，无绘图通道。<br><b>解决办法：</b>请在「API与高级设置」中切换为具备多模态生图权限的 API 中转节点或官方 Key（如 Gemini 3.1 Flash Image 或 DALL-E 3），或开启「双 API 分离」模式分别填入不同的 Key。</p>'
+          },
+          {
+            type: 'qa',
+            tag: 'Q3',
+            title: '提示 "401 Unauthorized" 是什么问题？',
+            content: '<p><b>可能原因：</b>API Key 填写有误、已过期或所用中转平台的账户余额不足，请检查并重新填入正确的 Key。</p>'
+          },
+          {
+            type: 'qa',
+            tag: 'Q4',
+            title: '本地网络代理（Proxy）需要手动配置吗？',
+            content: '<p>系统已内置智能端口自动嗅探机制（自动探测 7897、7890、10809 等常见代理端口）。绝大多数情况下保持默认 <code>auto</code> 或留空即可。</p>'
+          },
+          {
+            type: 'qa',
+            tag: 'Q5',
+            title: '生成的小猪角色素材可以商用或做游戏素材吗？',
+            content: '<p>本项目遵循 MIT 开源许可协议，生成的素材版权归使用者所有，支持自由进行二次创作、商用以及导入游戏引擎（如 Godot、Unity）中使用。</p>'
+          }
+        ],
         isPlanning: false,
         isRendering: false,
         isTestingNet: false,
-        testResult: null,
+        isTestingTextNet: false,
+        isTestingImageNet: false,
+        isTestingModels: false,
+        connResult: null,
+        textConnResult: null,
+        imageConnResult: null,
+        modelTestResult: null,
         logCopied: false,
         showHistoryModal: false,
-        networkStatus: { ok: true, text: '系统就绪' },
+        networkStatus: { ok: true, text: '本地服务连接正常' },
         notice: { show: false, text: '', type: 'success' },
         noticeTimer: null,
         config: {},
@@ -609,7 +1053,8 @@
     async mounted() {
       await this.fetchConfig();
       await this.fetchGallery();
-      this.addLog('系统初始化', 'AutoPig Studio 已就绪');
+      await this.loadVideos();
+      this.addLog('系统初始化', 'AutoPig Studio v1.1.0 已就绪');
       
       window.addEventListener('click', (e) => {
         if (!e.target.closest('.relative')) {
@@ -618,12 +1063,18 @@
       });
     },
     methods: {
+      async loadVideos() {
+        try {
+          const res = await fetch('/videos.json');
+          if (res.ok) {
+            this.videoData = await res.json();
+          }
+        } catch (e) {}
+      },
       showNotice(text, type = 'success') {
         if (this.noticeTimer) clearTimeout(this.noticeTimer);
         this.notice = { show: true, text, type };
-        this.noticeTimer = setTimeout(() => {
-          this.notice.show = false;
-        }, 2500);
+        this.noticeTimer = setTimeout(() => { this.notice.show = false; }, 2500);
       },
       playOink() {
         try {
@@ -641,6 +1092,12 @@
         this.playOink();
         this.currentTab = tab;
       },
+      toggleFaq(idx) {
+        this.playOink();
+        const pos = this.openFaqs.indexOf(idx);
+        if (pos > -1) this.openFaqs.splice(pos, 1);
+        else this.openFaqs.push(idx);
+      },
       toggleStyleDropdown(e) {
         e.stopPropagation();
         this.playOink();
@@ -652,71 +1109,211 @@
         this.showStyleMenu = false;
         this.addLog('切换风格偏好', `选中预设: ${tag}`);
       },
+      handleCharacterUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        this.playOink();
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width;
+            let h = img.height;
+            const maxD = 800;
+            if (w > maxD || h > maxD) {
+              if (w > h) { h = Math.round((h * maxD) / w); w = maxD; }
+              else { w = Math.round((w * maxD) / h); h = maxD; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            this.characterImgB64 = canvas.toDataURL('image/jpeg', 0.85);
+            this.addLog('上传参考图', `${file.name} (已自动轻量化压缩)`);
+            this.showNotice('🖼️ 角色参考图已载入', 'success');
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      },
+      async startCharacterPigGeneration() {
+        if (!this.characterImgB64) return;
+        this.playOink();
+        this.isCharRendering = true;
+        const slug = 'char_' + Date.now().toString(36);
+        const name = this.characterName.trim() || '定制角色';
+        
+        const newTask = {
+          theme: name,
+          features: '提取角色服饰特征与色彩',
+          slug: slug,
+          status: 'rendering',
+          image: null,
+          showRetry: false,
+          extraFeedback: '',
+          isCharacterMode: true,
+          charB64: this.characterImgB64
+        };
+        this.tasks.unshift(newTask);
+        this.addLog('发起角色转小猪', `角色: ${name}`);
+
+        try {
+          const res = await fetch('/api/render-character-pig', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              character_name: name,
+              character_image_b64: this.characterImgB64,
+              extra_feedback: newTask.extraFeedback
+            })
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            newTask.image = data.image_b64;
+            newTask.status = 'done';
+            this.addLog('同人小猪生成成功', `${name}猪`);
+            this.showNotice(`✨ ${name} 同人小猪已出炉！`, 'success');
+          } else {
+            newTask.status = 'error';
+            this.addLog('角色小猪化异常', data.message);
+            this.showNotice('⚠️ ' + data.message, 'info');
+          }
+        } catch (e) {
+          newTask.status = 'error';
+          this.addLog('请求超时', e.message);
+        }
+        this.isCharRendering = false;
+      },
       toggleRetry(task) {
         this.playOink();
         task.showRetry = !task.showRetry;
       },
-      handleImgError(e) {
-        e.target.style.display = 'none';
-      },
+      handleImgError(e) { e.target.style.display = 'none'; },
+      handleScholarImgError(e) { e.target.src = '/api/hero-image'; },
       async fetchConfig() {
-        const res = await fetch('/api/config');
-        this.config = await res.json();
+        try {
+          const res = await fetch('/api/config');
+          if (!res.ok) throw new Error();
+          this.config = await res.json();
+          this.networkStatus = { ok: true, text: '本地服务连接正常' };
+        } catch (e) {
+          this.networkStatus = { ok: false, text: '本地服务未连接' };
+        }
       },
       async saveSettings() {
         this.playOink();
-        await fetch('/api/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.config)
-        });
-        this.addLog('保存设置', '成功更新 API Key 及模型配置');
-        this.showNotice('⚙️ 配置保存成功！', 'success');
+        try {
+          await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.config)
+          });
+          this.addLog('保存设置', '成功更新配置');
+          this.showNotice('⚙️ 配置保存成功！', 'success');
+        } catch (e) {
+          this.showNotice('⚠️ 保存失败', 'info');
+        }
       },
-      async testConnection() {
+      async testConnectivity() {
         this.playOink();
         this.isTestingNet = true;
-        this.testResult = null;
+        this.connResult = null;
         this.logCopied = false;
         try {
-          const res = await fetch('/api/test-connection', {
+          const res = await fetch('/api/test-connectivity', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(this.config)
           });
           const data = await res.json();
           if (data.status === 'success') {
-            this.testResult = { status: 'success', msg: `✅ 连接成功！延迟 ${data.latency}ms，扫描到 ${data.models_count} 个模型` };
-            this.networkStatus = { ok: true, text: '网络与API连接正常' };
+            this.connResult = { status: 'success', msg: `✅ 连通成功！延迟 ${data.latency}ms，探测到 ${data.models_count} 个模型` };
             this.availableModels = data.models || [];
-            
-            if (data.recommended_text) {
-              this.config.text_model = data.recommended_text;
-            }
-            if (data.recommended_image) {
-              this.config.image_model = data.recommended_image;
-            }
-
-            this.addLog('智能探测模型', `策划推荐: ${data.recommended_text} | 绘图推荐: ${data.recommended_image}`);
-            this.showNotice(`✨ 已自动匹配模型：${data.recommended_text}`, 'success');
+            this.showNotice('✨ 接口连通测试成功', 'success');
           } else {
-            this.testResult = { status: 'error', msg: `❌ 连接失败: ${data.message}`, log: data.log || data.message };
-            this.networkStatus = { ok: false, text: 'API异常' };
-            this.addLog('测试连接失败', data.message);
+            this.connResult = { status: 'error', log: data.log || data.message };
           }
         } catch (e) {
-          this.testResult = { status: 'error', msg: `❌ 请求失败: ${e.message}`, log: e.stack || e.toString() };
-          this.networkStatus = { ok: false, text: '网络不可达' };
-          this.addLog('测试连接失败', e.message);
+          this.connResult = { status: 'error', log: e.stack || e.toString() };
         }
         this.isTestingNet = false;
       },
-      copyErrorLog() {
+      async testSpecificConnectivity(type) {
         this.playOink();
-        if (!this.testResult || !this.testResult.log) return;
-        navigator.clipboard.writeText(this.testResult.log);
+        const isText = type === 'text';
+        if (isText) {
+          this.isTestingTextNet = true;
+          this.textConnResult = null;
+        } else {
+          this.isTestingImageNet = true;
+          this.imageConnResult = null;
+        }
+        this.logCopied = false;
+
+        const payload = {
+          api_key: isText ? this.config.text_api_key : this.config.image_api_key,
+          base_url: isText ? this.config.text_base_url : this.config.image_base_url,
+          proxy: this.config.proxy || 'auto'
+        };
+
+        try {
+          const res = await fetch('/api/test-connectivity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          const resultObj = data.status === 'success'
+            ? { status: 'success', msg: `✅ 连通正常！延迟 ${data.latency}ms，支持 ${data.models_count} 个模型` }
+            : { status: 'error', log: data.log || data.message };
+
+          if (isText) {
+            this.textConnResult = resultObj;
+          } else {
+            this.imageConnResult = resultObj;
+          }
+          if (data.status === 'success') {
+            this.showNotice(`✨ ${isText ? '策划' : '生图'}接口连通测试成功`, 'success');
+          }
+        } catch (e) {
+          const errObj = { status: 'error', log: e.stack || e.toString() };
+          if (isText) this.textConnResult = errObj;
+          else this.imageConnResult = errObj;
+        }
+
+        if (isText) this.isTestingTextNet = false;
+        else this.isTestingImageNet = false;
+      },
+      async testModelsUsability() {
+        this.playOink();
+        this.isTestingModels = true;
+        this.modelTestResult = null;
+        this.logCopied = false;
+        try {
+          const res = await fetch('/api/test-models-usability', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.config)
+          });
+          const data = await res.json();
+          if (data.status === 'success') {
+            this.modelTestResult = data;
+            this.showNotice('✨ 选定模型验证完成', 'success');
+          } else {
+            this.modelTestResult = { status: 'error', log: data.log || data.message };
+          }
+        } catch (e) {
+          this.modelTestResult = { status: 'error', log: e.stack || e.toString() };
+        }
+        this.isTestingModels = false;
+      },
+      copyErrorLog(logContent) {
+        this.playOink();
+        if (!logContent) return;
+        navigator.clipboard.writeText(logContent);
         this.logCopied = true;
-        this.addLog('复制日志', '已复制错误日志至剪贴板');
         this.showNotice('📋 已复制日志', 'info');
         setTimeout(() => { this.logCopied = false; }, 2000);
       },
@@ -726,15 +1323,17 @@
         if (!file) return;
         const fd = new FormData();
         fd.append('file', file);
-        await fetch('/api/upload-base-img', { method: 'POST', body: fd });
-        this.addLog('更换基准图', file.name);
-        this.showNotice('🖼️ 基准参考图更新成功', 'success');
-        this.fetchConfig();
+        try {
+          await fetch('/api/upload-base-img', { method: 'POST', body: fd });
+          this.showNotice('🖼️ 基准参考图更新成功', 'success');
+          this.fetchConfig();
+        } catch (err) {
+          this.showNotice('⚠️ 图片上传失败', 'info');
+        }
       },
       async startBatchGeneration() {
         this.playOink();
         this.isPlanning = true;
-        this.tasks = [];
         this.addLog('发起量产任务', `计划生成 ${this.genCount} 只，风格: ${this.genStyle}`);
         try {
           const res = await fetch('/api/generate-plan', {
@@ -745,17 +1344,20 @@
           const data = await res.json();
           if (data.status !== 'ok') throw new Error(data.message);
           
-          this.tasks = data.tasks.map(t => ({
+          const newTasks = data.tasks.map(t => ({
             ...t,
             status: 'pending',
             image: null,
             showRetry: false,
-            extraFeedback: ''
+            extraFeedback: '',
+            isCharacterMode: false
           }));
+          
+          this.tasks.unshift(...newTasks);
           this.isPlanning = false;
           
           this.isRendering = true;
-          for (let task of this.tasks) {
+          for (let task of newTasks) {
             task.status = 'rendering';
             await this.renderTask(task);
           }
@@ -781,14 +1383,14 @@
           if (data.status === 'ok') {
             task.image = data.image_b64;
             task.status = 'done';
-            this.addLog('绘制完成', `${task.theme}猪 (pig_${task.slug}.png)`);
+            this.addLog('绘制完成', `${task.theme}猪`);
           } else {
             task.status = 'error';
-            this.addLog('绘制异常', `${task.theme}猪 渲染失败`);
+            this.addLog('绘制异常', data.message);
           }
         } catch (e) {
           task.status = 'error';
-          this.addLog('绘制异常', `${task.theme}猪 网络超时`);
+          this.addLog('绘制异常', e.message);
         }
       },
       async retryTask(task) {
@@ -797,50 +1399,82 @@
         task.showRetry = false;
         this.addLog('微调重绘', `${task.theme}猪 指示: ${task.extraFeedback || '原样重试'}`);
         this.showNotice(`✏️ 开始重绘【${task.theme}猪】`, 'info');
-        await this.renderTask(task);
+        
+        if (task.isCharacterMode && task.charB64) {
+          try {
+            const res = await fetch('/api/render-character-pig', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                character_name: task.theme,
+                character_image_b64: task.charB64,
+                extra_feedback: task.extraFeedback
+              })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+              task.image = data.image_b64;
+              task.status = 'done';
+            } else {
+              task.status = 'error';
+              this.addLog('重绘失败', data.message);
+            }
+          } catch (e) {
+            task.status = 'error';
+          }
+        } else {
+          await this.renderTask(task);
+        }
       },
       async saveAndDismiss(task, idx) {
         this.playOink();
         if (!task.image) return;
-        const res = await fetch('/api/save-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug: task.slug, image_b64: task.image })
-        });
-        const data = await res.json();
-        if (data.status === 'ok') {
-          this.addLog('保存小猪', `已存入: ${data.filename}`);
-          this.showNotice(`💾 成功保存: ${data.filename}`, 'success');
-          this.dismissTask(idx, task.theme, false);
-          this.fetchGallery();
+        try {
+          const res = await fetch('/api/save-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: task.slug, image_b64: task.image })
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            this.addLog('保存小猪', `已存入: ${data.filename}`);
+            this.showNotice(`💾 成功保存: ${data.filename}`, 'success');
+            this.dismissTask(idx, task.theme, false);
+            this.fetchGallery();
+          }
+        } catch (e) {
+          this.showNotice('⚠️ 保存失败', 'info');
         }
       },
       dismissTask(idx, theme = '', logNotice = true) {
         this.playOink();
         if (theme) this.addLog('移除卡片', `${theme}猪`);
-        if (logNotice) this.showNotice(`✕ 已取消【${theme}猪】`, 'info');
+        if (logNotice) this.showNotice(`✕ 已移除【${theme}猪】`, 'info');
         this.tasks.splice(idx, 1);
       },
       async fetchGallery() {
-        const res = await fetch('/api/gallery');
-        const data = await res.json();
-        this.gallery = data.images || [];
+        try {
+          const res = await fetch('/api/gallery');
+          const data = await res.json();
+          this.gallery = data.images || [];
+        } catch (e) {}
       },
       async deleteGalleryImage(filename) {
         this.playOink();
         if (!confirm(`确认删除图片 "${filename}" 吗？此操作无法撤销。`)) return;
-        const res = await fetch('/api/delete-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename })
-        });
-        const data = await res.json();
-        if (data.status === 'ok') {
-          this.addLog('删除小猪', `已从本地移除: ${filename}`);
-          this.showNotice(`🗑️ 成功删除: ${filename}`, 'info');
-          this.fetchGallery();
-        } else {
-          alert('删除失败: ' + data.message);
+        try {
+          const res = await fetch('/api/delete-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename })
+          });
+          if (data.status === 'ok') {
+            this.addLog('删除小猪', `已从本地移除: ${filename}`);
+            this.showNotice(`🗑️ 成功删除: ${filename}`, 'info');
+            this.fetchGallery();
+          }
+        } catch (e) {
+          alert('删除失败: ' + e.message);
         }
       }
     }

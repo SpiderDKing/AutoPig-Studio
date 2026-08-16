@@ -1,0 +1,16 @@
+{
+  "current_version": {
+    "title": "AutoPig Studio v1.1.0 开发者b站主页",
+    "desc": "请移步至AutoPig-Studio合集查看最新版本说明视频",
+    "url": "https://space.bilibili.com/438755197",
+    "tag": "up主主页"
+  },
+  "general_guides": [
+    {
+      "title": "【小白必看】如何零门槛获取并配置生图 API 密钥",
+      "desc": "详细讲解 API Key、Base URL 获取流程及网络连通排查",
+      "url": "https://www.bilibili.com/video/BV19Hb16dE5Y/",
+      "tag": "API配置"
+    }
+  ]
+}

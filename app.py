@@ -21,16 +21,15 @@ from openai import OpenAI
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
-CONFIG_FILE = "config.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
 
 def auto_detect_proxy() -> str:
     """智能自动探测本地代理端口与系统代理"""
     for env_key in ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]:
         if os.environ.get(env_key):
             return os.environ.get(env_key)
-    
-    common_ports = [7897, 7890, 10809, 10808, 20811]
-    for port in common_ports:
+    for port in [7897, 7890, 10809, 10808, 20811]:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(0.15)
@@ -43,6 +42,11 @@ def auto_detect_proxy() -> str:
 DEFAULT_CONFIG = {
     "api_key": "",
     "base_url": "https://api.apifast.tech/v1",
+    "dual_api": False,
+    "text_api_key": "",
+    "text_base_url": "",
+    "image_api_key": "",
+    "image_base_url": "",
     "proxy": "auto",
     "base_img_path": "pig_hero.png",
     "output_dir": "./output_pigs",
@@ -65,10 +69,10 @@ def save_config(cfg):
         json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 config = load_config()
-os.makedirs(config["output_dir"], exist_ok=True)
-os.makedirs("static", exist_ok=True)
+os.makedirs(os.path.join(BASE_DIR, config.get("output_dir", "./output_pigs")), exist_ok=True)
+os.makedirs(os.path.join(BASE_DIR, "static"), exist_ok=True)
 
-app = FastAPI(title="AutoPig Studio")
+app = FastAPI(title="AutoPig Studio v1.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -76,64 +80,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def get_client(custom_cfg=None):
-    cfg = custom_cfg or config
-    proxy_val = cfg.get("proxy", "auto")
-    
-    if proxy_val == "auto" or not proxy_val:
-        active_proxy = auto_detect_proxy()
-    else:
-        active_proxy = proxy_val
-
+def get_openai_client(api_key: str, base_url: str, proxy_val: str = "auto"):
+    active_proxy = auto_detect_proxy() if (proxy_val == "auto" or not proxy_val) else proxy_val
     if active_proxy:
         os.environ["HTTP_PROXY"] = active_proxy
         os.environ["HTTPS_PROXY"] = active_proxy
     else:
         os.environ.pop("HTTP_PROXY", None)
         os.environ.pop("HTTPS_PROXY", None)
-    
+
     return OpenAI(
-        api_key=cfg["api_key"] or os.environ.get("OPENAI_API_KEY", "EMPTY"),
-        base_url=cfg["base_url"],
+        api_key=api_key or os.environ.get("OPENAI_API_KEY", "EMPTY"),
+        base_url=base_url or "https://api.apifast.tech/v1",
     )
 
-def classify_models(model_ids: list[str]) -> dict:
-    """智能分析扫描到的模型列表，自动识别并推荐生图模型与策划文本模型"""
-    img_keywords = ["image", "dall-e", "flux", "imagen", "diffusion", "sd"]
-    
-    # 图像模型匹配优先级
-    rec_image = None
-    image_candidates = [m for m in model_ids if any(k in m.lower() for k in img_keywords)]
-    
-    for pref in ["gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-3-pro-image-preview", "dall-e-3", "flux"]:
-        for m in model_ids:
-            if pref in m.lower():
-                rec_image = m
-                break
-        if rec_image:
-            break
-    if not rec_image and image_candidates:
-        rec_image = image_candidates[0]
+def get_text_client(cfg=None):
+    c = cfg or config
+    if c.get("dual_api") and c.get("text_api_key"):
+        return get_openai_client(c.get("text_api_key"), c.get("text_base_url"), c.get("proxy", "auto"))
+    return get_openai_client(c.get("api_key"), c.get("base_url"), c.get("proxy", "auto"))
 
-    # 策划文本模型匹配优先级
-    text_priority = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gpt-4o-mini", "gpt-4o", "deepseek-chat", "claude-3-5-haiku"]
-    rec_text = None
-    for pref in text_priority:
-        for m in model_ids:
-            if pref in m.lower():
-                rec_text = m
-                break
-        if rec_text:
-            break
-    if not rec_text:
-        text_cands = [m for m in model_ids if m not in image_candidates]
-        rec_text = text_cands[0] if text_cands else (model_ids[0] if model_ids else "gemini-2.5-flash")
-
-    return {
-        "all_models": model_ids,
-        "recommended_text": rec_text or "gemini-2.5-flash",
-        "recommended_image": rec_image or "gemini-3.1-flash-image-preview"
-    }
+def get_image_client(cfg=None):
+    c = cfg or config
+    if c.get("dual_api") and c.get("image_api_key"):
+        return get_openai_client(c.get("image_api_key"), c.get("image_base_url"), c.get("proxy", "auto"))
+    return get_openai_client(c.get("api_key"), c.get("base_url"), c.get("proxy", "auto"))
 
 def decode_image_data(text: str) -> Image.Image:
     b64_match = re.search(r'data:image/[^;]+;base64,([A-Za-z0-9+/=\s]+)', text)
@@ -154,21 +125,39 @@ def decode_image_data(text: str) -> Image.Image:
     except Exception:
         return None
 
-# ================= 接口路由 =================
-
+# ================= 静态与媒体路由 =================
 @app.get("/api/hero-image")
 def get_hero_image_api():
-    base_img = config.get("base_img_path", "pig_hero.png")
-    if os.path.exists(base_img):
-        return FileResponse(base_img)
-    return JSONResponse(status_code=404, content={"message": "Hero image not found"})
+    base_img = os.path.join(BASE_DIR, config.get("base_img_path", "pig_hero.png"))
+    return FileResponse(base_img) if os.path.exists(base_img) else JSONResponse(status_code=404, content={"message": "Not found"})
+
+@app.get("/api/scholar-image")
+def get_scholar_image_api():
+    scholar_img = os.path.join(BASE_DIR, "pig_scholar.png")
+    if os.path.exists(scholar_img): return FileResponse(scholar_img)
+    hero_img = os.path.join(BASE_DIR, config.get("base_img_path", "pig_hero.png"))
+    return FileResponse(hero_img) if os.path.exists(hero_img) else JSONResponse(status_code=404, content={"message": "Not found"})
+
+@app.get("/api/pig-gif")
+def get_pig_gif_api():
+    for name in ["pig1.gif", "pig.gif", "pig_walk.gif", "walk.gif", "anim.gif"]:
+        gif_path = os.path.join(BASE_DIR, name)
+        if os.path.exists(gif_path):
+            return FileResponse(gif_path, media_type="image/gif", headers={"Cache-Control": "no-cache"})
+    hero_img = os.path.join(BASE_DIR, config.get("base_img_path", "pig_hero.png"))
+    return FileResponse(hero_img) if os.path.exists(hero_img) else JSONResponse(status_code=404, content={"message": "Not found"})
 
 @app.get("/api/oink-sound")
 def get_oink_sound_api():
-    sound_path = "oink.wav"
-    if os.path.exists(sound_path):
-        return FileResponse(sound_path, media_type="audio/wav")
-    return JSONResponse(status_code=404, content={"message": "Sound file not found"})
+    sound_path = os.path.join(BASE_DIR, "oink.wav")
+    return FileResponse(sound_path, media_type="audio/wav") if os.path.exists(sound_path) else JSONResponse(status_code=404, content={"message": "Not found"})
+
+@app.get("/videos.json")
+def get_videos_json_api():
+    for p in [os.path.join(BASE_DIR, "static", "videos.json"), os.path.join(BASE_DIR, "videos.json")]:
+        if os.path.exists(p):
+            return FileResponse(p, media_type="application/json")
+    return JSONResponse(content={"current_version": None, "general_guides": []})
 
 @app.get("/api/config")
 def get_config_api():
@@ -181,42 +170,57 @@ def save_config_api(cfg: dict):
     global config
     config.update(cfg)
     save_config(config)
-    os.makedirs(config["output_dir"], exist_ok=True)
     return {"status": "ok", "config": config}
 
-@app.post("/api/test-connection")
-def test_connection_api(cfg: dict):
+@app.post("/api/test-connectivity")
+def test_connectivity_api(cfg: dict):
     try:
-        client = get_client(cfg)
+        client = get_openai_client(cfg.get("api_key"), cfg.get("base_url"), cfg.get("proxy", "auto"))
         start_t = time.time()
         models_data = client.models.list()
         latency = int((time.time() - start_t) * 1000)
         model_ids = [m.id for m in models_data.data]
-        classification = classify_models(model_ids)
+        return {"status": "success", "latency": latency, "models_count": len(model_ids), "models": model_ids}
+    except Exception as e:
+        return {"status": "error", "message": str(e), "log": traceback.format_exc()}
+
+@app.post("/api/test-models-usability")
+def test_models_usability_api(cfg: dict):
+    try:
+        txt_client = get_text_client(cfg)
+        test_text_model = cfg.get("text_model", "gemini-2.5-flash")
+        test_image_model = cfg.get("image_model", "gemini-3.1-flash-image-preview")
+
+        text_ok, text_msg = False, ""
+        try:
+            start_t = time.time()
+            res = txt_client.chat.completions.create(model=test_text_model, messages=[{"role": "user", "content": "1+1="}], max_tokens=5)
+            text_ok, text_msg = True, f"响应正常 ({int((time.time() - start_t) * 1000)}ms)"
+        except Exception as e_text:
+            text_msg = f"调用失败: {str(e_text)}"
+
+        img_keywords = ["image", "dall-e", "flux", "imagen", "diffusion", "sd"]
+        image_ok = any(k in test_image_model.lower() for k in img_keywords)
+        image_msg = "生图通道匹配正常" if image_ok else "模型未命中常见生图关键词"
+
         return {
             "status": "success",
-            "latency": latency,
-            "models_count": len(model_ids),
-            "models": model_ids,
-            "recommended_text": classification["recommended_text"],
-            "recommended_image": classification["recommended_image"]
+            "text_model": test_text_model, "text_model_ok": text_ok, "text_model_msg": text_msg,
+            "image_model": test_image_model, "image_model_ok": image_ok, "image_model_msg": image_msg
         }
     except Exception as e:
-        err_trace = traceback.format_exc()
-        return {
-            "status": "error",
-            "message": str(e),
-            "log": f"【错误类型】: {type(e).__name__}\n【错误详情】: {str(e)}\n\n【完整调用栈日志】:\n{err_trace}"
-        }
+        return {"status": "error", "message": str(e), "log": traceback.format_exc()}
 
+# ================= 模式 1：智能风格文字量产 =================
 @app.post("/api/generate-plan")
 def generate_plan_api(payload: dict):
     count = int(payload.get("count", 3))
     style_vibe = payload.get("style_vibe", "趣味职业与生活角色")
     
+    out_dir = os.path.join(BASE_DIR, config.get("output_dir", "./output_pigs"))
     existing = []
-    if os.path.exists(config["output_dir"]):
-        for f in os.listdir(config["output_dir"]):
+    if os.path.exists(out_dir):
+        for f in os.listdir(out_dir):
             if f.startswith("pig_") and f.endswith(".png"):
                 slug = re.sub(r'_\d+$', '', f[4:-4])
                 existing.append(slug)
@@ -232,33 +236,29 @@ def generate_plan_api(payload: dict):
     )
     user_prompt = f"请设计 {count} 个视觉特征鲜明但配饰极简的小猪角色。风格偏好：{style_vibe}。{exclude_text}"
 
-    client = get_client()
-    chosen_text_model = config.get("text_model", "gemini-2.5-flash")
-    models_to_try = [chosen_text_model]
-    for m in ["gemini-2.5-flash", "gemini-2.0-flash", "gpt-4o-mini", "gemini-3-flash-preview"]:
-        if m not in models_to_try:
-            models_to_try.append(m)
-    
+    client = get_text_client()
+    configured_model = config.get("text_model", "gemini-2.5-flash")
+    models_to_try = [configured_model]
+    for backup_model in ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-3-pro-image-preview"]:
+        if backup_model not in models_to_try:
+            models_to_try.append(backup_model)
+
     last_err = None
     for model in models_to_try:
         try:
             res = client.chat.completions.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
+                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                 temperature=0.85
             )
             content = res.choices[0].message.content.strip()
             if content.startswith("```"):
                 lines = content.splitlines()
-                if lines[0].startswith("```"): lines = lines[1:]
+                if lines and lines[0].startswith("```"): lines = lines[1:]
                 if lines and lines[-1].startswith("```"): lines = lines[:-1]
                 content = "\n".join(lines).strip()
 
-            tasks = json.loads(content)
-            return {"status": "ok", "tasks": tasks}
+            return {"status": "ok", "tasks": json.loads(content)}
         except Exception as e:
             last_err = e
             continue
@@ -271,7 +271,7 @@ def render_image_api(payload: dict):
     features = payload.get("features")
     extra_feedback = payload.get("extra_feedback", "")
     
-    base_img_path = config.get("base_img_path", "pig_hero.png")
+    base_img_path = os.path.join(BASE_DIR, config.get("base_img_path", "pig_hero.png"))
     if not os.path.exists(base_img_path):
         return JSONResponse(status_code=400, content={"status": "error", "message": f"基准参考图 '{base_img_path}' 不存在！"})
 
@@ -281,7 +281,7 @@ def render_image_api(payload: dict):
     prompt = (
         f"请为参考图中的这只小猪设计【{theme}】造型（带有简单的{features}）。\n"
         f"严格要求：\n"
-        f"1. 必须完全基于原图小猪进行创作，保持小猪趴卧的四足动物形态与原图相同的浅色调配色，严禁画成双腿站立的人物姿态。\n"
+        f"1. 必须完全基于原图小猪进行创作，保持小猪趴卧的四足动物形态与原图肉色/浅色调皮肤，严禁画成双腿站立的人物姿态。\n"
         f"2. 保持与参考图一致的二维手绘矢量画风。\n"
         f"3. 装饰配饰保持极简点缀，不要过于复杂繁琐。\n"
         f"4. 背景为纯白色，无任何背景场景。"
@@ -289,76 +289,152 @@ def render_image_api(payload: dict):
     if extra_feedback:
         prompt += f"\n5. 额外微调修改要求：{extra_feedback}"
 
-    client = get_client()
-    chosen_image_model = config.get("image_model", "gemini-3.1-flash-image-preview")
-    models_to_try = [chosen_image_model]
-    for m in ["gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-3-pro-image-preview", "dall-e-3"]:
-        if m not in models_to_try:
-            models_to_try.append(m)
-    
+    client = get_image_client()
+    configured_model = config.get("image_model", "gemini-3.1-flash-image-preview")
+    models_to_try = [configured_model]
+    for backup_model in ["gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-3-pro-image-preview"]:
+        if backup_model not in models_to_try:
+            models_to_try.append(backup_model)
+
     for m in models_to_try:
         try:
             resp = client.chat.completions.create(
                 model=m,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{hero_b64}"}}
-                        ]
-                    }
-                ]
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{hero_b64}"}}
+                    ]
+                }]
             )
             raw = resp.choices[0].message.content
             img = decode_image_data(raw)
             if img:
                 buffered = io.BytesIO()
                 img.save(buffered, format="PNG")
-                img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-                return {"status": "ok", "image_b64": f"data:image/png;base64,{img_str}"}
+                return {"status": "ok", "image_b64": f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"}
         except Exception:
             continue
 
     return JSONResponse(status_code=500, content={"status": "error", "message": "图像生成失败，请检查提示词或模型通道"})
 
+# ================= 模式 2：角色参考图转小猪（玩偶穿搭黄金方案） =================
+@app.post("/api/render-character-pig")
+def render_character_pig_api(payload: dict):
+    character_name = payload.get("character_name", "").strip() or "特定角色"
+    character_b64 = payload.get("character_image_b64", "")
+    extra_feedback = payload.get("extra_feedback", "")
+    
+    if "," in character_b64:
+        character_b64 = character_b64.split(",", 1)[1]
+
+    base_img_path = os.path.join(BASE_DIR, config.get("base_img_path", "pig_hero.png"))
+    if not os.path.exists(base_img_path):
+        return JSONResponse(status_code=400, content={"status": "error", "message": f"基准参考图 '{base_img_path}' 不存在！"})
+
+    with open(base_img_path, "rb") as f:
+        hero_b64 = base64.b64encode(f.read()).decode("utf-8")
+
+    txt_client = get_text_client()
+    img_client = get_image_client()
+
+    # 1. 结构化提炼三件套：发型发套 + 迷你披风领结 + 标志性点缀
+    extracted_features = "角色标志性发色假发套、经典配色迷你小披肩与代表性小饰品"
+    ana_prompt = (
+        f"请仔细观察参考图中的角色（{character_name}），为一只Q版趴卧肉色小猪设计一套专属的【Cosplay 迷你换装三件套】。\n"
+        "请精准提炼并直接输出以下 3 项具体内容（文字精炼，总字数在 40 字以内）：\n"
+        "1. 头顶假发套：具体的发型发色与标志性头饰（如：灰白色齐肩假发配黑白女仆发箍）；\n"
+        "2. 背部小斗篷：提取角色服装的经典配色与领口（如：黑白色调的小披风，系着红色小领结）；\n"
+        "3. 标志性小点缀：1个核心代表物（如：微型十字发夹/专属胸针）。\n"
+        "格式要求：直接输出一段流畅的穿戴描述，不要带序号或解释。"
+    )
+    
+    txt_models = [config.get("text_model", "gemini-2.5-flash"), "gemini-2.5-flash", "gemini-3-flash-preview"]
+    for tm in txt_models:
+        try:
+            ana_resp = txt_client.chat.completions.create(
+                model=tm,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": ana_prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{character_b64}"}}
+                    ]
+                }]
+            )
+            extracted_features = ana_resp.choices[0].message.content.strip()
+            break
+        except Exception:
+            continue
+
+    # 2. 采用具象穿搭提示词，杜绝死板负面词打架
+    prompt = (
+        f"请参考图2中【{character_name}】的外貌设定，为图1中的趴卧肉色小猪换上一套【{character_name} 主题 Cosplay 专属装扮】。\n\n"
+        f"装扮设计要求（{extracted_features}）：\n"
+        f"1. 【头部装扮】：小猪头顶服帖地戴着【{character_name}】标志性的发色假发与头饰，但面部必须完整露出图1小猪原生可爱的黑色豆豆眼与粉色椭圆猪鼻子。\n"
+        f"2. 【背部装扮】：小猪圆滚滚的背上披着【{character_name}】经典服饰配色的小斗篷/小披肩，领口点缀精致的小领结或代表性配饰。\n"
+        f"3. 【画风与体态】：保持与图1完全一致的二维手绘矢量画风与四足趴卧姿势，既能一眼看出是图1的小猪本体，又能一眼认出是【{character_name}】的同人换装！\n"
+        f"4. 【背景】：纯白色背景（#FFFFFF），无任何阴影或杂物。"
+    )
+    if extra_feedback:
+        prompt += f"\n5. 额外微调修改要求：{extra_feedback}"
+
+    # 3. 双图多模态对照渲染 (图1: 小猪模板, 图2: 角色立绘)
+    configured_img_model = config.get("image_model", "gemini-3.1-flash-image-preview")
+    img_models_to_try = [configured_img_model]
+    for backup_model in ["gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-3-pro-image-preview"]:
+        if backup_model not in img_models_to_try:
+            img_models_to_try.append(backup_model)
+
+    for im in img_models_to_try:
+        try:
+            resp = img_client.chat.completions.create(
+                model=im,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{hero_b64}"}},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{character_b64}"}}
+                    ]
+                }]
+            )
+            img = decode_image_data(resp.choices[0].message.content)
+            if img:
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                return {"status": "ok", "image_b64": f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode('utf-8')}"}
+        except Exception:
+            continue
+
+    return JSONResponse(status_code=500, content={"status": "error", "message": "未能生成有效图片，请检查网络通道或提示词"})
+    
+# ================= 保存与画廊管理 =================
 @app.post("/api/save-image")
 def save_image_api(payload: dict):
     slug = payload.get("slug", "custom")
-    img_b64 = payload.get("image_b64", "")
-    
+    img_b64 = payload.get("image_b64", "").split(",", 1)[-1]
     if not img_b64:
         return JSONResponse(status_code=400, content={"status": "error", "message": "无图片数据"})
 
-    if "," in img_b64:
-        img_b64 = img_b64.split(",", 1)[1]
-    
-    img_bytes = base64.b64decode(img_b64)
-    out_dir = config["output_dir"]
+    out_dir = os.path.join(BASE_DIR, config.get("output_dir", "./output_pigs"))
     os.makedirs(out_dir, exist_ok=True)
-    
-    base_name = f"pig_{slug}"
-    save_path = os.path.join(out_dir, f"{base_name}.png")
-    counter = 2
+    save_path = os.path.join(out_dir, f"pig_{slug}.png")
+    c = 2
     while os.path.exists(save_path):
-        save_path = os.path.join(out_dir, f"{base_name}_{counter}.png")
-        counter += 1
-
+        save_path = os.path.join(out_dir, f"pig_{slug}_{c}.png")
+        c += 1
     with open(save_path, "wb") as f:
-        f.write(img_bytes)
-
-    return {"status": "ok", "filename": os.path.basename(save_path), "path": save_path}
+        f.write(base64.b64decode(img_b64))
+    return {"status": "ok", "filename": os.path.basename(save_path)}
 
 @app.post("/api/delete-image")
 def delete_image_api(payload: dict):
-    filename = payload.get("filename")
-    if not filename:
-        return JSONResponse(status_code=400, content={"status": "error", "message": "缺少文件名"})
-    
-    target_path = os.path.join(config["output_dir"], filename)
-    if os.path.exists(target_path):
+    target = os.path.join(BASE_DIR, config.get("output_dir", "./output_pigs"), payload.get("filename", ""))
+    if os.path.exists(target): 
         try:
-            os.remove(target_path)
+            os.remove(target)
             return {"status": "ok"}
         except Exception as e:
             return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
@@ -366,33 +442,30 @@ def delete_image_api(payload: dict):
 
 @app.get("/api/gallery")
 def get_gallery_api():
-    out_dir = config["output_dir"]
-    if not os.path.exists(out_dir):
-        return {"images": []}
-    
-    images = []
+    out_dir = os.path.join(BASE_DIR, config.get("output_dir", "./output_pigs"))
+    if not os.path.exists(out_dir): return {"images": []}
+    imgs = []
     for f in sorted(os.listdir(out_dir), reverse=True):
-        if f.endswith(".png") or f.endswith(".jpg"):
-            path = os.path.join(out_dir, f)
-            with open(path, "rb") as img_file:
-                b64 = base64.b64encode(img_file.read()).decode("utf-8")
-            images.append({
-                "filename": f,
-                "data": f"data:image/png;base64,{b64}",
-                "size": f"{os.path.getsize(path) / 1024:.1f} KB"
-            })
-    return {"images": images}
+        if f.endswith((".png", ".jpg")):
+            p = os.path.join(out_dir, f)
+            with open(p, "rb") as im:
+                imgs.append({
+                    "filename": f, 
+                    "data": f"data:image/png;base64,{base64.b64encode(im.read()).decode()}", 
+                    "size": f"{os.path.getsize(p)/1024:.1f} KB"
+                })
+    return {"images": imgs}
 
 @app.post("/api/upload-base-img")
 async def upload_base_img_api(file: UploadFile = File(...)):
-    dest_path = "pig_hero.png"
-    with open(dest_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    config["base_img_path"] = dest_path
+    dest = os.path.join(BASE_DIR, "pig_hero.png")
+    with open(dest, "wb") as buf: shutil.copyfileobj(file.file, buf)
+    config["base_img_path"] = "pig_hero.png"
     save_config(config)
-    return {"status": "ok", "path": dest_path}
+    return {"status": "ok"}
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+# 静态资源挂载
+app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, "static"), html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
